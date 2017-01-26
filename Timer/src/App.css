@@ -1,10 +1,12 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:700|Roboto:400,500,700');
 
+
 body {
   margin: 0;
   padding: 0;
   font-family: 'Roboto', sans-serif;
 }
+
 
 .header {
   text-align: center;
@@ -17,6 +19,11 @@ body {
   font-family: 'Montserrat', sans-serif;
   font-weight: bold;
   margin-top: 15px;
+}
+
+.header span {
+  float: right;
+  color: lightgray;
 }
 
 
@@ -101,7 +108,7 @@ button:hover {
 /****** Panel Styles  ******/
 .panel {
   float: right;
-  margin: 20px 30px;
+  margin: 20px 55px;  
 }
 
 .panel h2 {
@@ -147,17 +154,62 @@ button:hover {
   color: #38ae58;
 }
 
+.timer-player-wrapper {
+  padding-left: 17px;
+  font-size: 1.3rem;
+  display: inline-block;
+}
+
+.timer-player-wrapper button {
+  margin-left: 20px;
+  background-color: rgb(76, 175, 80);
+  border: none;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 15px;
+}
+
 /****** Setting Styles  ******/
 .settings-wrapper {
   float: right;
-  margin: 20px 23%;
+  margin: 0px 250px;
 }
 
 .settings-wrapper h2 {
   text-decoration: underline;
-  margin-bottom: 30px;
+  font-size: 1.75em;
 }
 
+.settings-wrapper h3 {
+  text-decoration: underline;
+  font-size: 1.30em;
+}
 
+.settings-wrapper input[type=text], select, input[type=number] {
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
 
+.settings-wrapper input[type=submit] {
+  width: 100%;
+  background-color: #4caf50;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
+.settings-wrapper input[type=submit]:hover {
+  background-color: #45a049;
+}
+
+/* Somebody teach me how to css pls */

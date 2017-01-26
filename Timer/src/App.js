@@ -3,25 +3,33 @@ import moment from 'moment';
 import 'normalize.css';
 import './App.css';
 import { Link } from 'react-router'; //eslint-disable-line
+import io from 'socket.io-client';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      isSetup: false,
       players: [],
       secondsElapsed: 0,
       isRunning: false,
       isReset: 'startup',
       class: 'player-time-player-running player-time-running timer-player-wrapper',
-      fontFamily: 'sans serif',
-      fontSize: 16
+      fontFamily: 'Arial',
+      fontSize: 50,
+      colorFinished: '#4CAF50',
+      colorPaused: '#9E9E9E',
+      colorStartup: '#000000',
+      colorRunning: '#03A9F4'
     };
     this.incrementer = null;
+    this.socket = io('localhost:5555');
+    this.socket.on('timeUpdate', (data) => { this.setState({ data }); });
   }
 
   render() {
     return (
-      <div className="wrapper">
+      <div className="wrapper" onKeyDown={this.handleKeyDown.bind(this)}>
         <Header />
         <div className="timer-wrapper">
           <Stopwatch players={this.state.players} onPlayerDone={this.onPlayerDone.bind(this)}
@@ -37,26 +45,80 @@ class App extends Component {
         <div className="settings-wrapper">
           <Settings size={this.state.fontSize} font={this.state.fontFamily}
           handleChange={this.settingsHandleChange.bind(this)}
-          handleSubmit={this.settingsHandleSubmit.bind(this)}/>
+          handleSubmit={this.settingsHandleSubmit.bind(this)}
+          finished={this.state.colorFinished}
+          paused={this.state.colorPaused}
+          startup={this.state.colorStartup}
+          running={this.state.colorRunning}/>
         </div>
+        <button type="button" onClick={this.handleStopClick.bind(this)}>Debug stop</button>
+        <button type="button" onClick={this.handleStartClick.bind(this)}>Debug start</button>
+        <button type="button" onClick={this.handleResetClick.bind(this)}>Debug reset</button>
+        <button type="button" onClick={this.handleResume.bind(this)}>Debug resume</button>
+
       </div>
     );
   }
 
-  settingsHandleChange(event) {
+  componentDidMount() {
+    // not sure if this is "the react way of doing things" but I didn't find anything else
+    document.body.addEventListener('keydown', (event) => {
+      this.handleKeyDown(event.keyCode);
+    });
+
+    this.socket.on('timeUpdate', (data) => {
+      console.log(data);
+      this.setState({ secondsElapsed: data.secondsElapsed });
+    });
+
+    this.socket.on('isRunningUpdate', (data) => {
+      this.setState({ isRunning: data });
+    });
+
+    this.socket.on('isResetUpdate', (data) => {
+      this.setState({ isReset: data });
+    });
+
+    this.socket.on('currentState', (data) => {
+      if (!this.state.isSetup) {
+        this.setState({
+        isSetup: true,
+        isReset: data.isReset,
+        isRunning: data.isRunning,
+        secondsElapsed: data.delta
+        });
+      }
+    });
+  }
+
+  componentWillUnmount() {
+    // dunno if this is necessary but... eh
+    document.body.removeEventListener('keydown');
+  }
+
+  formattedSeconds(sec) {
+    return (
+      moment().startOf('day')
+              .second(sec)
+              .format('H:mm:ss')
+    );
+  }
+
+  handleKeyDown(key) {
+    switch (key) {
+      case 77 : this.onPlayerDone(0, this.formattedSeconds(this.state.secondsElapsed)); break;
+      case 78 : this.onPlayerDone(1, this.formattedSeconds(this.state.secondsElapsed)); break;
+      case 66 : this.onPlayerDone(2, this.formattedSeconds(this.state.secondsElapsed)); break;
+      case 86 : this.onPlayerDone(3, this.formattedSeconds(this.state.secondsElapsed)); break;
+    }
+  }
+
+  settingsHandleChange() {
     this.setState({ [event.target.name]: [event.target.value] });
   }
 
-  settingsHandleSubmit(event) {
+  settingsHandleSubmit() {
     event.preventDefault();
-    fetch('http://localhost:5555/css', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fontSize: this.state.fontSize,
-        fontFamily: this.state.fontFamily
-      })
-    }).catch(console.error);
   }
 
   onPlayerUpdate(index, est) {
@@ -80,10 +142,20 @@ class App extends Component {
   onPlayerDone(i, time) {
     if (this.state.players.length === 0) return;
     const player = this.state.players;
-    // check if all players are finished
     player[i].time = time;
     player[i].finished = true;
 
+    let playerPosition = () => { //eslint-disable-line
+      let count = 0;
+      this.state.players.forEach((value) => {
+        if (value.finished === true) {
+          count++;
+        }
+      });
+      return count;
+    };
+
+    // check if all players are finished
     if (player.every(elem => elem.finished === true)) {
       this.handleStopClick(true);
       player[i].class = 'player-time-player-stopped player-time-stopped timer-player-wrapper';
@@ -92,100 +164,67 @@ class App extends Component {
     player[i].class = 'player-time-player-stopped player-time-running timer-player-wrapper';
   }
 
-  startCount() {
-    this.incrementer = setInterval(() => {
-      this.setState({ secondsElapsed: this.state.secondsElapsed + 1 });
-    }, 1000);
-  }
-
-  postColor(color) {
-    fetch('http://localhost:5555/colorChange', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ color: color })
-    }).catch(console.error);
-  }
 
   handleStartClick() {
-    this.postColor('#03A9F4');
-    this.setState({
-      secondsElapsed: 1,
-      isRunning: true,
-      isReset: 'running'
-    });
-    this.startCount();
+    fetch('http://localhost:5555/startTimer');
   }
 
-  handleStopClick(isFinished) {
-    if (isFinished) {
-      this.postColor('#4CAF50');
-      setTimeout(() => { this.postColor('black'); }, 10000);
-    } else {
-      this.postColor('#9E9E9E');
-    }
-
-    clearInterval(this.incrementer);
-    this.setState({
-      isRunning: false,
-      isReset: 'stopped'
-      });
+  handleStopClick() {
+    fetch('http://localhost:5555/stopTimer');
   }
 
   handleResetClick() {
-    fetch('http://localhost:5555/colorChange', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ color: 'black' })
-    }).catch(console.error);
-
-    if (this.state.isRunning) return;
-    this.setState({
-      secondsElapsed: 0,
-      isRunning: false,
-      isReset: 'startup',
-      players: []
-    });
+    fetch('http://localhost:5555/resetTimer');
   }
 
   handleResume() {
-    this.postColor('#03A9F4');
-    this.setState({
-      secondsElapsed: this.state.secondsElapsed + 1,
-      isRunning: true,
-      isReset: 'running'
-    });
-    this.startCount();
+    fetch('http://localhost:5555/resumeTimer');
   }
 
 }
 
+/* eslint-disable no-trailing-spaces */
 class Settings extends Component { //eslint-disable-line 
   render() {
-    // not wanting to cope with ANY MORE FUCKING CSS MADE ME USE SO MANY BREAKS. WHY CAN'T CSS JUST DO WHAT YOU WANT IT TO DO
+    // please don't kill me for the styling of this form
+    // I'm honestly extremely sorry for any web designer looking at this code
+    // I know that this is extremely shit. FORGIVE ME
+    // WutFace
     return (
       <div>
+      <h2>Settings</h2>
         <form onSubmit={this.props.handleSubmit.bind(this)}>
-          <h2>Font</h2>
+          <h3>Font</h3>
           <label>
-            Font Family
+            Font Family:&nbsp;
             <input type="text" value={this.props.font} onChange={this.props.handleChange.bind(this)} name="fontFamily"/>
           </label>
+          <br />
           <label>
-            Font Size
-            <input type="number" value={this.props.size} onChange={this.props.handleChange.bind(this)} name="fontSize"/>
+            Font Size:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <input type="number" value={this.props.size} onChange={this.props.handleChange.bind(this)} name="fontSize" />
           </label>
+          <h3>Colors</h3>
+          <label>Finished:&nbsp;<input type="color" name="colorFinished" value={this.props.finished} onChange={this.props.handleChange.bind(this)}/></label>
+          &nbsp;&nbsp;&nbsp;<label>Paused:&nbsp;&nbsp;<input type="color" name="colorPaused" value={this.props.paused} onChange={this.props.handleChange.bind(this)}/></label>
+          <br />
+          <label>Startup:&nbsp;&nbsp;&nbsp;<input type="color" name="colorStartup" value={this.props.startup} onChange={this.props.handleChange.bind(this)}/></label>
+          &nbsp;&nbsp;&nbsp;<label>Running:&nbsp;<input type="color" name="colorRunning" value={this.props.running} onChange={this.props.handleChange.bind(this)}/></label>
           <input type="submit" value="submit" />
         </form>
       </div>
     );
   }
+/* eslint-enable no-trailing-spaces */
 }
 
 class PlayerSetup extends Component { //eslint-disable-line
   render() {
     let players = [];
     for (let i = 0; i < this.props.maxPlayers; i++) {
-      players.push(<button key={i} onClick={this.props.isReset === 'startup' ? () => { this.props.onPlayerUpdate(i + 1, 5); } : null } className={this.props.isReset === 'startup' ? 'panel-player-on' : 'panel-player-off'}>Setup {i + 1} {i === 0 ? 'Player' : 'Players'}</button>);
+      players.push(
+        <button key={i} onClick={this.props.isReset === 'startup' ? () => { this.props.onPlayerUpdate(i + 1, 5); } : null } className={this.props.isReset === 'startup' ? 'panel-player-on' : 'panel-player-off'}>Setup {i + 1} {i === 0 ? 'Player' : 'Players'}</button>
+      );
     }
     return (
       <div className="panel">
@@ -224,11 +263,6 @@ class Stopwatch extends Component { //eslint-disable-line
         break;
     }
 
-    fetch('http://localhost:5555/updateTime', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ time: this.formattedSeconds(this.props.secondsElapsed) })
-    }).catch(console.error);
 
     return (
       <div>
@@ -242,7 +276,7 @@ class Stopwatch extends Component { //eslint-disable-line
           {this.props.players.map((current) => {
             return (
               <Players key={current.number} number={current.number} est={current.est} finished={current.finished} time={this.formattedSeconds(this.props.secondsElapsed)}
-              onPlayerDone={this.props.onPlayerDone} playerTime={current.time} class={current.class}/>
+              onPlayerDone={this.props.onPlayerDone} playerTime={current.time} class={current.class} isReset={this.props.isReset}/>
             );
           })}
         </div>
@@ -262,11 +296,17 @@ class Players extends Component { //eslint-disable-line
   }
 
   render() {
+    let onClickFunction;
+    if (this.props.isReset === 'startup' || this.props.finished) {
+      onClickFunction = null;
+    } else {
+      onClickFunction = () => this.playerDone();
+    }
     return (
       <div className={this.props.class}>
         <h3>Player {this.props.number + 1}</h3>
         <span>{this.props.finished ? this.props.playerTime : this.props.time}</span>
-        <button onClick={this.props.finished ? null : () => this.playerDone()}>Done</button>
+        <button onClick={onClickFunction}>Done</button>
       </div>
     );
   }
@@ -276,8 +316,10 @@ function Header() { //eslint-disable-line
   return (
     <div className="header">
       <h1>ESA Germany Timer</h1>
+      <span>made by Onestay</span>
     </div>
   );
 }
+
 
 export default App;
