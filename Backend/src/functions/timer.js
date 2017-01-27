@@ -8,6 +8,9 @@ let delta = 0;
 let isReset = 'startup';
 let isRunning = false;
 
+//player
+let players = [];
+
 
 exports.startCount = (io) => {
 	startTime = Date.now();
@@ -52,7 +55,8 @@ exports.getState = () => {
 	return {
 		delta: delta,
 		isReset: isReset,
-		isRunning: isRunning
+		isRunning: isRunning,
+		players: players
 	};
 }
 
@@ -60,7 +64,32 @@ function increment(io) {
 	let difference = Math.floor((Date.now() - startTime) / 1000)
 	if (difference !== delta) {
 		delta = difference;
-		console.log(`New delta: ${delta}`);
 		io.emit('timeUpdate', { secondsElapsed: delta });
 	}
 }
+
+// player functions
+
+exports.addPlayer = (io, data) => {
+	players = [];
+	for (let i = 0; i < data.players; i++) {
+		let playerObj = {
+			number: i,
+			finished: false,
+			time: null,
+			estimate: data.est || null,
+			class: 'player-time-player-running player-time-running timer-player-wrapper'
+		}
+
+		players.push(playerObj);
+	};
+
+	io.emit('addPlayer', { players: players });
+}
+
+exports.donePlayer = (playerIndex) => {
+	if (players.length === 0) return;
+
+	players[playerIndex].time = delta;
+	players[playerIndex].finished = true;fd
+};

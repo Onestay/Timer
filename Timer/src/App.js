@@ -1,9 +1,16 @@
-import React, { Component } from 'react'; //eslint-disable-line
+// react
+import React, { Component } from 'react';
+
+// other libs
 import moment from 'moment';
+import io from 'socket.io-client';
+import Alert from 'react-s-alert';
+
+// css
 import 'normalize.css';
 import './App.css';
-import { Link } from 'react-router'; //eslint-disable-line
-import io from 'socket.io-client';
+import 'react-s-alert/dist/s-alert-default.css';
+import 'react-s-alert/dist/s-alert-css-effects/slide.css';
 
 class App extends Component {
   constructor(props) {
@@ -55,7 +62,7 @@ class App extends Component {
         <button type="button" onClick={this.handleStartClick.bind(this)}>Debug start</button>
         <button type="button" onClick={this.handleResetClick.bind(this)}>Debug reset</button>
         <button type="button" onClick={this.handleResume.bind(this)}>Debug resume</button>
-
+        <Alert stack={{ limit: 2 }} />
       </div>
     );
   }
@@ -67,7 +74,6 @@ class App extends Component {
     });
 
     this.socket.on('timeUpdate', (data) => {
-      console.log(data);
       this.setState({ secondsElapsed: data.secondsElapsed });
     });
 
@@ -85,15 +91,44 @@ class App extends Component {
         isSetup: true,
         isReset: data.isReset,
         isRunning: data.isRunning,
-        secondsElapsed: data.delta
+        secondsElapsed: data.delta,
+        players: data.players
         });
       }
+    });
+
+    this.socket.on('addPlayer', (data) => {
+      this.setState({ players: data.players });
+    });
+
+    this.socket.on('connect_error', () => {
+      this.alertMessage('Couldn\'t connect to the websocket. Make sure the backend server is configured correctly.');
+    });
+
+    this.socket.on('connect', () => {
+      this.alertMessage('Connected to websocket.', 'success');
     });
   }
 
   componentWillUnmount() {
     // dunno if this is necessary but... eh
     document.body.removeEventListener('keydown');
+  }
+
+  alertMessage(message, event) {
+    if (!event) {
+      Alert.error(message, {
+        position: 'top-left',
+        effect: 'slide',
+        timeout: 4000
+      });
+    } else if (event === 'success') {
+        Alert.success(message, {
+          position: 'top-left',
+          effect: 'slide',
+          timeout: 4000
+        });
+    }
   }
 
   formattedSeconds(sec) {
@@ -122,21 +157,14 @@ class App extends Component {
   }
 
   onPlayerUpdate(index, est) {
-    this.setState({ players: [] });
-    let tempArr = [];
-    for (let i = 0; i < index; i++) {
-      let playerObj = {
-        number: i,
-        finished: false,
-        time: null,
-        estimate: est || null,
-        class: 'player-time-player-running player-time-running timer-player-wrapper'
-      };
-
-      tempArr.push(playerObj);
-    }
-    this.setState({ players: tempArr });
-    tempArr = [];
+    fetch('http://localhost:5555/addPlayer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        players: index,
+        est: est
+      })
+    });
   }
 
   onPlayerDone(i, time) {
@@ -166,25 +194,56 @@ class App extends Component {
 
 
   handleStartClick() {
-    fetch('http://localhost:5555/startTimer');
+    fetch('http://localhost:5555/startTimer').catch((e) => {
+      this.alertMessage(`Couldn't connect to backend server. Error: ${e.message}`);
+    })
+    .then((data) => {
+      if (!data.ok) {
+        this.alertMessage(`Error: ${data.statusText}. More info in the console.`);
+        console.log(data);
+      }
+    });
   }
 
   handleStopClick() {
-    fetch('http://localhost:5555/stopTimer');
+    fetch('http://localhost:5555/stopTimer').catch((e) => {
+      this.alertMessage(`Couldn't connect to backend server. Error: ${e.message}`);
+    })
+    .then((data) => {
+      if (!data.ok) {
+        this.alertMessage(`Error: ${data.statusText}. More info in the console.`);
+        console.log(data);
+      }
+    });
   }
 
   handleResetClick() {
-    fetch('http://localhost:5555/resetTimer');
+    fetch('http://localhost:5555/resetTimer').catch((e) => {
+      this.alertMessage(`Couldn't connect to backend server. Error: ${e.message}`);
+    })
+    .then((data) => {
+      if (!data.ok) {
+        this.alertMessage(`Error: ${data.statusText}. More info in the console.`);
+        console.log(data);
+      }
+    });
   }
 
   handleResume() {
-    fetch('http://localhost:5555/resumeTimer');
+    fetch('http://localhost:5555/resumeTimer').catch((e) => {
+      this.alertMessage(`Couldn't connect to backend server. Error: ${e.message}`);
+    })
+    .then((data) => {
+      if (!data.ok) {
+        this.alertMessage(`Error: ${data.statusText}. More info in the console.`);
+        console.log(data);
+      }
+    });
   }
 
 }
 
-/* eslint-disable no-trailing-spaces */
-class Settings extends Component { //eslint-disable-line 
+class Settings extends Component {
   render() {
     // please don't kill me for the styling of this form
     // I'm honestly extremely sorry for any web designer looking at this code
@@ -218,7 +277,7 @@ class Settings extends Component { //eslint-disable-line
 /* eslint-enable no-trailing-spaces */
 }
 
-class PlayerSetup extends Component { //eslint-disable-line
+class PlayerSetup extends Component {
   render() {
     let players = [];
     for (let i = 0; i < this.props.maxPlayers; i++) {
@@ -236,7 +295,7 @@ class PlayerSetup extends Component { //eslint-disable-line
 }
 
 
-class Stopwatch extends Component { //eslint-disable-line
+class Stopwatch extends Component {
   formattedSeconds(sec) {
     return (
       moment().startOf('day')
@@ -285,7 +344,7 @@ class Stopwatch extends Component { //eslint-disable-line
   }
 }
 
-class Players extends Component { //eslint-disable-line
+class Players extends Component {
   playerDone() {
     let time = this.props.time;
     this.props.onPlayerDone(this.props.number, time);
@@ -312,7 +371,7 @@ class Players extends Component { //eslint-disable-line
   }
 }
 
-function Header() { //eslint-disable-line
+function Header() {
   return (
     <div className="header">
       <h1>ESA Germany Timer</h1>

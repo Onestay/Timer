@@ -26,8 +26,17 @@ module.exports = (app, io) => {
 		console.log('Resuming timer');
 	});
 
+	app.post('/addPlayer', (req, res) => {
+		res.status(200).send();
+		console.log('Player add');
+		timerFunctions.addPlayer(io, {
+			players: req.body.players,
+			est: req.body.est
+		});
+	});
+
 	// this doesn't really belong here. Will probably move this into a different file later
-	io.on('connection', (socket) => {
+	io.on('connection', () => {
 		console.log('Client connected.');
 		let state = timerFunctions.getState();
 		io.emit('currentState', (state));
