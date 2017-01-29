@@ -36,22 +36,34 @@ exports.resetCount = (io) => {
 	delta = 0;
 	isRunning = false;
 	isReset = 'startup';
+	players = [];
+	io.emit('addPlayer', { players: players });
 	io.emit('isRunningUpdate', isRunning);
 	io.emit('isResetUpdate', isReset);
 	io.emit('timeUpdate', { secondsElapsed: delta });
 };
 
 exports.resumeCount = (io) => {
+	if (players.every(p => p.finished === true && players.length > 1)) return;
 	startTime += Date.now() - lastStopped; 
 	isRunning = true;
 	isReset = 'running';
 	io.emit('isRunningUpdate', isRunning);
 	io.emit('isResetUpdate', isReset);
 	increment(io);
-	incrementer = setInterval(() => { increment(io) }, 100)
+	incrementer = setInterval(() => { increment(io) }, 100);
+
+	if (players.every(p => p.finished === true) && players.length === 1) {
+		for (let i = 0; i < players.length; i++) {
+			players[i].finished = false;
+			players[i].time = delta;
+		};
+		io.emit('addPlayer', { players: players });
+	};
 };
 
 exports.getState = () => {
+
 	return {
 		delta: delta,
 		isReset: isReset,
@@ -87,9 +99,23 @@ exports.addPlayer = (io, data) => {
 	io.emit('addPlayer', { players: players });
 }
 
-exports.donePlayer = (playerIndex) => {
+exports.donePlayer = (playerIndex, io) => {
 	if (players.length === 0) return;
 
 	players[playerIndex].time = delta;
-	players[playerIndex].finished = true;fd
+	players[playerIndex].finished = true;
+
+	if (players.every(p => p.finished === true)) {
+		lastStopped = Date.now();
+		clearInterval(incrementer);
+		incrementer = null;
+		isRunning = false;
+		isReset = 'stopped'
+		io.emit('isRunningUpdate', isRunning);
+		io.emit('isResetUpdate', isReset);
+		players[playerIndex].class = 'player-time-player-stopped player-time-stopped timer-player-wrapper';
+	};
+
+	players[playerIndex].class = 'player-time-player-stopped player-time-running timer-player-wrapper';
+	io.emit('addPlayer', { players: players });
 };

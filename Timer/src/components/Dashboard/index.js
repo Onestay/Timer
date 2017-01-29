@@ -8,7 +8,7 @@ import Alert from 'react-s-alert';
 
 // css
 import 'normalize.css';
-import './App.css';
+import './style.css';
 import 'react-s-alert/dist/s-alert-default.css';
 import 'react-s-alert/dist/s-alert-css-effects/slide.css';
 
@@ -68,7 +68,6 @@ class App extends Component {
   }
 
   componentDidMount() {
-    // not sure if this is "the react way of doing things" but I didn't find anything else
     document.body.addEventListener('keydown', (event) => {
       this.handleKeyDown(event.keyCode);
     });
@@ -86,19 +85,34 @@ class App extends Component {
     });
 
     this.socket.on('currentState', (data) => {
+      let players = data.players;
+      for (let i = 0; i < players.length; i++) {
+        if (players[i].finished) {
+          players[i].time = this.formattedSeconds(players[i].time);
+        }
+      }
+
       if (!this.state.isSetup) {
         this.setState({
         isSetup: true,
         isReset: data.isReset,
         isRunning: data.isRunning,
         secondsElapsed: data.delta,
-        players: data.players
+        players: players
         });
       }
     });
 
     this.socket.on('addPlayer', (data) => {
-      this.setState({ players: data.players });
+      let players = data.players;
+
+      for (let i = 0; i < players.length; i++) {
+        if (players[i].finished) {
+          players[i].time = this.formattedSeconds(players[i].time);
+        }
+      }
+
+      this.setState({ players: players });
     });
 
     this.socket.on('connect_error', () => {
@@ -167,7 +181,8 @@ class App extends Component {
     });
   }
 
-  onPlayerDone(i, time) {
+  onPlayerDone(i) {
+    /*
     if (this.state.players.length === 0) return;
     const player = this.state.players;
     player[i].time = time;
@@ -190,8 +205,13 @@ class App extends Component {
     }
 
     player[i].class = 'player-time-player-stopped player-time-running timer-player-wrapper';
+    */
+    fetch('http://localhost:5555/donePlayer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: i })
+    });
   }
-
 
   handleStartClick() {
     fetch('http://localhost:5555/startTimer').catch((e) => {
@@ -245,10 +265,7 @@ class App extends Component {
 
 class Settings extends Component {
   render() {
-    // please don't kill me for the styling of this form
-    // I'm honestly extremely sorry for any web designer looking at this code
-    // I know that this is extremely shit. FORGIVE ME
-    // WutFace
+    // I'm honestly extremely sorry for any web designer looking at the styling of this form
     return (
       <div>
       <h2>Settings</h2>
@@ -335,7 +352,7 @@ class Stopwatch extends Component {
           {this.props.players.map((current) => {
             return (
               <Players key={current.number} number={current.number} est={current.est} finished={current.finished} time={this.formattedSeconds(this.props.secondsElapsed)}
-              onPlayerDone={this.props.onPlayerDone} playerTime={current.time} class={current.class} isReset={this.props.isReset}/>
+              onPlayerDone={this.props.onPlayerDone} playerTime={current.time} class={current.class} isReset={this.props.isReset} onPlayerResume={this.props.onPlayerResume}/>
             );
           })}
         </div>
@@ -346,26 +363,28 @@ class Stopwatch extends Component {
 
 class Players extends Component {
   playerDone() {
-    let time = this.props.time;
-    this.props.onPlayerDone(this.props.number, time);
-  }
-
-  getCurrentTime() {
-    return this.props.time;
+    this.props.onPlayerDone(this.props.number);
   }
 
   render() {
-    let onClickFunction;
+    let button;
+
     if (this.props.isReset === 'startup' || this.props.finished) {
-      onClickFunction = null;
-    } else {
-      onClickFunction = () => this.playerDone();
+      button = <button onClick={null} className="player-button-disable">Done</button>;
+    } else if (!this.props.finished) {
+      button = <button onClick={() => this.props.onPlayerDone(this.props.number)} className="player-button-enable">Done</button>;
     }
+/*
+I don't really see any sense for resuming a single player. I will still leave it here in case it's needed later
+    } else if (this.props.finished) {
+      button = <button onClick={() => this.props.onPlayerResume(this.props.number)} className="player-button-resume">Resume</button>;
+    }
+*/
     return (
       <div className={this.props.class}>
         <h3>Player {this.props.number + 1}</h3>
         <span>{this.props.finished ? this.props.playerTime : this.props.time}</span>
-        <button onClick={onClickFunction}>Done</button>
+        {button}
       </div>
     );
   }

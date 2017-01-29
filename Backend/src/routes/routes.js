@@ -1,6 +1,7 @@
 module.exports = (app, io) => {
 
 	const timerFunctions = require('../functions/timer.js');
+	const auth = require('../functions/auth.js');
 
 	app.get('/startTimer', (req, res) => {
 		res.status(200).send();
@@ -32,6 +33,22 @@ module.exports = (app, io) => {
 		timerFunctions.addPlayer(io, {
 			players: req.body.players,
 			est: req.body.est
+		});
+	});
+
+	app.post('/donePlayer', (req, res) => {
+		res.status(200).send();
+		console.log(`Player ${req.body.index} finished`);
+		timerFunctions.donePlayer(req.body.index, io);
+	});
+
+	app.post('/validateKey', (req, res) => {
+		auth.validateKey(req.body.url).then((data) => {
+			if (data) {
+				res.status(202).send();
+			} else {
+				res.status(200).send();
+			}
 		});
 	});
 

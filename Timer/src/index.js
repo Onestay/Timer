@@ -1,8 +1,8 @@
-import React from 'react'; //eslint-disable-line
-import ReactDOM from 'react-dom';
-import './index.css';
-import { Router, Route, browserHistory} from 'react-router'; //eslint-disable-line
+import { render } from 'react-dom';
 
-import App from './App'; //eslint-disable-line
+import routes from './router';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+render(
+	routes,
+	document.getElementById('root')
+);

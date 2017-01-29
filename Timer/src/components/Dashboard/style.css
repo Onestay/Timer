@@ -160,9 +160,33 @@ button:hover {
   display: inline-block;
 }
 
-.timer-player-wrapper button {
+.player-button-enable {
   margin-left: 20px;
   background-color: rgb(76, 175, 80);
+  border: none;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 15px;
+}
+
+.player-button-disable {
+  margin-left: 20px;
+  background-color: darkgray;
+  border: none;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 15px;
+}
+
+.player-button-resume {
+  margin-left: 20px;
+  background-color: #c62828;
   border: none;
   color: white;
   padding: 10px;
