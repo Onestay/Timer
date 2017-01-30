@@ -2,6 +2,7 @@
 let incrementer;
 let startTime;
 let lastStopped;
+let updateTime = 1;
 
 //these are set to something to just have a default state
 let delta = 0;
@@ -50,7 +51,7 @@ exports.startCount = (io) => {
 	io.emit('isRunningUpdate', true);
 	io.emit('isResetUpdate', 'running')
 	increment(io);
-	incrementer = setInterval(() => {increment(io)}, 100)
+	incrementer = setInterval(() => {increment(io)}, updateTime)
 	postColor(colorRunning, io);
 };
 
@@ -88,13 +89,13 @@ exports.resumeCount = (io) => {
 	io.emit('isRunningUpdate', isRunning);
 	io.emit('isResetUpdate', isReset);
 	increment(io);
-	incrementer = setInterval(() => { increment(io) }, 100);
+	incrementer = setInterval(() => { increment(io) }, updateTime);
 
 	if (players.every(p => p.finished === true) && players.length === 1) {
 		for (let i = 0; i < players.length; i++) {
 			players[i].finished = false;
 			players[i].time = delta;
-			players[i].class = 'player-time-player-running player-time-running timer-player-wrapper'
+			players[i].class = 'player-time-player-running timer-player-wrapper'
 		};
 		io.emit('addPlayer', { players: players });
 	};
@@ -119,7 +120,7 @@ exports.getState = () => {
 }
 
 function increment(io) {
-	let difference = Math.floor((Date.now() - startTime) / 1000)
+	let difference = Math.round(((Date.now() - startTime) / 1000) * 100) / 100
 	if (difference !== delta) {
 		delta = difference;
 		io.emit('timeUpdate', { secondsElapsed: delta });
@@ -159,7 +160,7 @@ exports.donePlayer = (playerIndex, io) => {
 		isReset = 'stopped'
 		io.emit('isRunningUpdate', isRunning);
 		io.emit('isResetUpdate', isReset);
-		players[playerIndex].class = 'player-time-player-stopped player-time-stopped timer-player-wrapper';
+		players[playerIndex].class = 'player-time-player-stopped timer-player-wrapper';
 		
 		if (players.length > 1) {
 			isReset = 'disableAfterDone';
@@ -170,6 +171,6 @@ exports.donePlayer = (playerIndex, io) => {
 	postColor(colorFinished, io);
 	};
 
-	players[playerIndex].class = 'player-time-player-stopped player-time-running timer-player-wrapper';
+	players[playerIndex].class = 'player-time-player-stopped timer-player-wrapper';
 	io.emit('addPlayer', { players: players });
 };

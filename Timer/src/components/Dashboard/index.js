@@ -7,6 +7,7 @@ import io from 'socket.io-client';
 import Alert from 'react-s-alert';
 
 // css
+import 'bootstrap/dist/css/bootstrap.css';
 import 'normalize.css';
 import './style.css';
 import 'react-s-alert/dist/s-alert-default.css';
@@ -50,15 +51,17 @@ class App extends Component {
           isRunning={this.state.isRunning}
           isReset={this.state.isReset}/>
         </div>
-        <PlayerSetup onPlayerUpdate={this.onPlayerUpdate.bind(this)} isRunning={this.state.isRunning} maxPlayers={4} isReset={this.state.isReset}/>
-        <div className="settings-wrapper">
-          <Settings size={this.state.fontSize} font={this.state.fontFamily}
-          finished={this.state.colorFinished}
-          paused={this.state.colorPaused}
-          startup={this.state.colorStartup}
-          running={this.state.colorRunning}
-          updateState={this.updateState.bind(this)}
-          submitSettings={this.submitSettings.bind(this)}/>
+        <div className="sidebar-wrapper">
+          <PlayerSetup onPlayerUpdate={this.onPlayerUpdate.bind(this)} isRunning={this.state.isRunning} maxPlayers={4} isReset={this.state.isReset}/>
+          <div className="settings-wrapper" id="settings">
+            <Settings size={this.state.fontSize} font={this.state.fontFamily}
+            finished={this.state.colorFinished}
+            paused={this.state.colorPaused}
+            startup={this.state.colorStartup}
+            running={this.state.colorRunning}
+            updateState={this.updateState.bind(this)}
+            submitSettings={this.submitSettings.bind(this)}/>
+          </div>
         </div>
         <Alert stack={{ limit: 2 }} />
       </div>
@@ -297,22 +300,36 @@ class Settings extends Component {
       <h2>Settings</h2>
         <form onSubmit={this.handleSubmit.bind(this)}>
           <h3>Font</h3>
-          <label>
-            Font Family:&nbsp;
-            <input type="text" value={this.props.font} onChange={this.handleChange.bind(this)} name="fontFamily"/>
-          </label>
-          <br />
-          <label>
-            Font Size:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <input type="number" value={this.props.size} onChange={this.handleChange.bind(this)} name="fontSize" />
-          </label>
+          <div className="form-group">
+            <label>
+              Font Family:
+              <input type="text" value={this.props.font} onChange={this.handleChange.bind(this)} name="fontFamily" className="form-control"/>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Font Size:
+              <input type="number" value={this.props.size} onChange={this.handleChange.bind(this)} name="fontSize" className="form-control"/>
+            </label>
+          </div>
           <h3>Colors</h3>
-          <label>Finished:&nbsp;<input type="color" name="colorFinished" value={this.props.finished} onChange={this.handleChange.bind(this)}/></label>
-          &nbsp;&nbsp;&nbsp;<label>Paused:&nbsp;&nbsp;<input type="color" name="colorPaused" value={this.props.paused} onChange={this.handleChange.bind(this)}/></label>
-          <br />
-          <label>Startup:&nbsp;&nbsp;&nbsp;<input type="color" name="colorStartup" value={this.props.startup} onChange={this.handleChange.bind(this)}/></label>
-          &nbsp;&nbsp;&nbsp;<label>Running:&nbsp;<input type="color" name="colorRunning" value={this.props.running} onChange={this.handleChange.bind(this)}/></label>
-          <input type="submit" value="submit" />
+          <div className="container">
+            <div className="row">
+              <div className="col">
+                <label>Finished:<input type="color" name="colorFinished" value={this.props.finished} onChange={this.handleChange.bind(this)} className="form-control"/></label>
+              </div>
+              <div className="col">
+                <label>Paused:<input type="color" name="colorPaused" value={this.props.paused} onChange={this.handleChange.bind(this)} className="form-control"/></label>
+              </div>
+              <div className="col">
+                  <label>Startup:<input type="color" name="colorStartup" value={this.props.startup} onChange={this.handleChange.bind(this)} className="form-control"/></label>
+              </div>
+              <div className="col">
+                  <label>Running:<input type="color" name="colorRunning" value={this.props.running} onChange={this.handleChange.bind(this)} className="form-control"/></label>
+              </div>
+            </div>
+          </div>
+          <input type="submit" value="submit" className="btn btn-primary"/>
         </form>
       </div>
     );
@@ -333,11 +350,11 @@ class PlayerSetup extends Component {
     let players = [];
     for (let i = 0; i < this.props.maxPlayers; i++) {
       players.push(
-        <button key={i} onClick={this.props.isReset === 'startup' ? () => { this.props.onPlayerUpdate(i + 1, 5); } : null } className={this.props.isReset === 'startup' ? 'panel-player-on' : 'panel-player-off'}>Setup {i + 1} {i === 0 ? 'Player' : 'Players'}</button>
+        <button key={i} onClick={this.props.isReset === 'startup' ? () => { this.props.onPlayerUpdate(i + 1, 5); } : null } className={this.props.isReset === 'startup' ? 'btn btn-primary button-margin' : 'btn btn-primary disabled button-margin'}>Setup {i + 1} {i === 0 ? 'Player' : 'Players'}</button>
       );
     }
     return (
-      <div className="panel">
+      <div className="panel" id="player-setup">
         <h2>Player Setup</h2>
         {players}
       </div>
@@ -352,19 +369,19 @@ class Stopwatch extends Component {
 
     switch (this.props.isReset) {
       case 'running':
-        buttonCase = <button className="timer-btn-stop" onClick={() => this.props.handleStopClick()}>Stop</button>;
+        buttonCase = <button className="btn btn-danger btn-lg" onClick={() => this.props.handleStopClick()}>Stop</button>;
         break;
       case 'stopped':
-        buttonCase = <button className="timer-btn-stop" onClick={() => this.props.handleResume()}>Resume</button>;
+        buttonCase = <button className="btn btn-danger btn-lg" onClick={() => this.props.handleResume()}>Resume</button>;
         break;
       case 'startup':
-        buttonCase = <button className={this.props.players.length === 0 ? 'timer-btn-disable' : 'timer-btn-start'} onClick={this.props.players.length === 0 ? null : () => { this.props.handleStartClick(); }}>Start</button>;
+        buttonCase = <button className={this.props.players.length === 0 ? 'btn btn-success disabled btn-lg' : 'btn btn-success btn-lg'} onClick={this.props.players.length === 0 ? null : () => { this.props.handleStartClick(); }}>Start</button>;
         break;
       default:
-        buttonCase = <button className="timer-btn-stop">ERROR</button>;
+        buttonCase = <button className="btn btn-danger btn-lg">ERROR</button>;
         break;
       case 'disableAfterDone':
-        buttonCase = <button className="timer-btn-disable">Resume</button>;
+        buttonCase = <button className="timer-btn-disable btn-lg">Resume</button>;
         break;
     }
 
@@ -374,7 +391,7 @@ class Stopwatch extends Component {
         <div className="timer-master">
           <h2>Master Timer</h2>
           {buttonCase}
-          <button onClick={this.props.isRunning ? null : () => this.props.handleResetClick()} className={this.props.isRunning ? 'timer-btn-reset-off' : 'timer-btn-reset'}>Reset</button>
+          <button onClick={this.props.isRunning ? null : () => this.props.handleResetClick()} className={this.props.isRunning ? 'btn btn-warning disabled btn-lg' : 'btn btn-warning btn-lg'}>Reset</button>
           <span className='time-time'>{this.props.seconds}</span>
         </div>
         <div className="timer-player">
@@ -399,21 +416,16 @@ class Players extends Component {
     let button;
 
     if (this.props.isReset === 'startup' || this.props.finished) {
-      button = <button onClick={null} className="player-button-disable">Done</button>;
+      button = <button onClick={null} className="btn btn-primary btn-sm disabled">Done</button>;
     } else if (!this.props.finished) {
-      button = <button onClick={() => this.props.onPlayerDone(this.props.number)} className="player-button-enable">Done</button>;
+      button = <button onClick={() => this.props.onPlayerDone(this.props.number)} className="btn btn-primary btn-sm">Done</button>;
     }
-/*
-I don't really see any sense for resuming a single player. I will still leave it here in case it's needed later
-    } else if (this.props.finished) {
-      button = <button onClick={() => this.props.onPlayerResume(this.props.number)} className="player-button-resume">Resume</button>;
-    }
-*/
     return (
       <div className={this.props.class}>
         <h3>Player {this.props.number + 1}</h3>
         <span>{this.props.finished ? this.props.playerTime : this.props.time}</span>
         {button}
+
       </div>
     );
   }
@@ -423,7 +435,7 @@ function Header() {
   return (
     <div className="header">
       <h1>ESA Germany Timer</h1>
-      <span>made with &#10084; and code by Onestay</span>
+      <small className="text-muted">made with &#10084; and code by Onestay</small>
     </div>
   );
 }

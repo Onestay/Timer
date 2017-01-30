@@ -45,6 +45,12 @@ class Timer extends Component {
 		return moment.duration(sec, 'seconds').format('H:mm:ss', { trim: false });
 	}
 
+	appendMilliseconds(sec) {
+		return moment.duration(sec, 'seconds').format('S', { trim: true })
+		.toString()
+		.substr(-3, 2);
+	}
+
 	render() {
 		let style = {
 			fontFamily: this.state.fontFamily,
@@ -52,8 +58,21 @@ class Timer extends Component {
 			color: this.state.color
 		};
 
+		let millisecondsStyle = {
+			fontFamily: this.state.fontFamily,
+			fontSize: this.state.fontSize / 1.5,
+			color: this.state.color
+		};
+
 		let time = this.formatSeconds(this.state.seconds);
-		return <span style={style}>{time}</span>;
+		let milliseconds = this.appendMilliseconds(this.state.seconds);
+		let kek; //eslint-disable-line
+		return (
+			<div>
+				<span style={style}>{time}.</span>
+				<span style={millisecondsStyle}>{milliseconds}</span>
+			</div>
+		);
 	}
 }
 
