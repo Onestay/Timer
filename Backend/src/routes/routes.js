@@ -52,6 +52,11 @@ module.exports = (app, io) => {
 		});
 	});
 
+	app.post('/updateSettings', (req, res) => {
+		timerFunctions.updateSettings(req.body, io);
+		res.status(200).send();
+	});
+
 	// this doesn't really belong here. Will probably move this into a different file later
 	io.on('connection', () => {
 		console.log('Client connected.');

@@ -11,6 +11,37 @@ let isRunning = false;
 //player
 let players = [];
 
+//settings
+let fontFamily = 'Arial';
+let fontSize = 50;
+let colorFinished = '#4CAF50';
+let colorPaused = '#9E9E9E';
+let colorStartup = '#000000';
+let colorRunning = '#03A9F4';
+
+exports.postSettings = (io) => {
+	//post settings to the main timer
+	io.emit('settings', {
+		fontFamily: fontFamily,
+		fontSize: fontSize
+	});
+};
+
+function postColor(color, io) {
+	io.emit('colorChange', { color: color });
+};
+
+exports.updateSettings = (data, io) => {
+	io.emit('settings', {
+		fontFamily: fontFamily = data.fontFamily,
+		fontSize: fontSize = data.fontSize,
+		colorFinished: colorFinished = data.colorFinished,
+		colorStartup: colorStartup =data.colorStartup,
+		colorPaused: colorPaused = data.colorPaused,
+		colorRunning: colorRunning = data.colorRunning
+	});
+};
+
 
 exports.startCount = (io) => {
 	startTime = Date.now();
@@ -20,6 +51,7 @@ exports.startCount = (io) => {
 	io.emit('isResetUpdate', 'running')
 	increment(io);
 	incrementer = setInterval(() => {increment(io)}, 100)
+	postColor(colorRunning, io);
 };
 
 exports.stopCount = (io) => {
@@ -30,6 +62,7 @@ exports.stopCount = (io) => {
 	isReset = 'stopped'
 	io.emit('isRunningUpdate', isRunning);
 	io.emit('isResetUpdate', isReset);
+	postColor(colorPaused, io);
 };
 
 exports.resetCount = (io) => {
@@ -41,10 +74,14 @@ exports.resetCount = (io) => {
 	io.emit('isRunningUpdate', isRunning);
 	io.emit('isResetUpdate', isReset);
 	io.emit('timeUpdate', { secondsElapsed: delta });
+	postColor(colorStartup, io);
 };
 
 exports.resumeCount = (io) => {
-	if (players.every(p => p.finished === true && players.length > 1)) return;
+	if (players.every(p => p.finished === true && players.length > 1)) {
+		return;
+	};
+
 	startTime += Date.now() - lastStopped; 
 	isRunning = true;
 	isReset = 'running';
@@ -57,9 +94,12 @@ exports.resumeCount = (io) => {
 		for (let i = 0; i < players.length; i++) {
 			players[i].finished = false;
 			players[i].time = delta;
+			players[i].class = 'player-time-player-running player-time-running timer-player-wrapper'
 		};
 		io.emit('addPlayer', { players: players });
 	};
+
+	postColor(colorRunning, io);
 };
 
 exports.getState = () => {
@@ -68,7 +108,13 @@ exports.getState = () => {
 		delta: delta,
 		isReset: isReset,
 		isRunning: isRunning,
-		players: players
+		players: players,
+		fontFamily: fontFamily,
+		fontSize: fontSize,
+		colorFinished: colorFinished,
+		colorStartup: colorStartup,
+		colorPaused: colorPaused,
+		colorRunning: colorRunning
 	};
 }
 
@@ -114,6 +160,14 @@ exports.donePlayer = (playerIndex, io) => {
 		io.emit('isRunningUpdate', isRunning);
 		io.emit('isResetUpdate', isReset);
 		players[playerIndex].class = 'player-time-player-stopped player-time-stopped timer-player-wrapper';
+		
+		if (players.length > 1) {
+			isReset = 'disableAfterDone';
+		} else {
+			isReset = 'stopped'
+		}
+	io.emit('isResetUpdate', isReset);
+	postColor(colorFinished, io);
 	};
 
 	players[playerIndex].class = 'player-time-player-stopped player-time-running timer-player-wrapper';

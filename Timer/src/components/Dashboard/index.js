@@ -23,7 +23,7 @@ class App extends Component {
       isReset: 'startup',
       class: 'player-time-player-running player-time-running timer-player-wrapper',
       fontFamily: 'Arial',
-      fontSize: 50,
+      fontSize: 100,
       colorFinished: '#4CAF50',
       colorPaused: '#9E9E9E',
       colorStartup: '#000000',
@@ -32,9 +32,11 @@ class App extends Component {
     this.incrementer = null;
     this.socket = io('localhost:5555');
     this.socket.on('timeUpdate', (data) => { this.setState({ data }); });
+    this.time = this.formattedSeconds(this.state.secondsElapsed);
   }
 
   render() {
+    this.time = this.formattedSeconds(this.state.secondsElapsed);
     return (
       <div className="wrapper" onKeyDown={this.handleKeyDown.bind(this)}>
         <Header />
@@ -44,24 +46,20 @@ class App extends Component {
           handleStopClick={this.handleStopClick.bind(this)}
           handleResetClick={this.handleResetClick.bind(this)}
           handleResume={this.handleResume.bind(this)}
-          secondsElapsed={this.state.secondsElapsed}
+          seconds={this.time}
           isRunning={this.state.isRunning}
           isReset={this.state.isReset}/>
         </div>
         <PlayerSetup onPlayerUpdate={this.onPlayerUpdate.bind(this)} isRunning={this.state.isRunning} maxPlayers={4} isReset={this.state.isReset}/>
         <div className="settings-wrapper">
           <Settings size={this.state.fontSize} font={this.state.fontFamily}
-          handleChange={this.settingsHandleChange.bind(this)}
-          handleSubmit={this.settingsHandleSubmit.bind(this)}
           finished={this.state.colorFinished}
           paused={this.state.colorPaused}
           startup={this.state.colorStartup}
-          running={this.state.colorRunning}/>
+          running={this.state.colorRunning}
+          updateState={this.updateState.bind(this)}
+          submitSettings={this.submitSettings.bind(this)}/>
         </div>
-        <button type="button" onClick={this.handleStopClick.bind(this)}>Debug stop</button>
-        <button type="button" onClick={this.handleStartClick.bind(this)}>Debug start</button>
-        <button type="button" onClick={this.handleResetClick.bind(this)}>Debug reset</button>
-        <button type="button" onClick={this.handleResume.bind(this)}>Debug resume</button>
         <Alert stack={{ limit: 2 }} />
       </div>
     );
@@ -98,7 +96,13 @@ class App extends Component {
         isReset: data.isReset,
         isRunning: data.isRunning,
         secondsElapsed: data.delta,
-        players: players
+        players: players,
+        fontFamily: data.fontFamily,
+        fontSize: data.fontSize,
+        colorFinished: data.colorFinished,
+        colorStartup: data.colorStartup,
+        colorPaused: data.colorPaused,
+        colorRunning: data.colorRunning
         });
       }
     });
@@ -121,6 +125,17 @@ class App extends Component {
 
     this.socket.on('connect', () => {
       this.alertMessage('Connected to websocket.', 'success');
+    });
+
+    this.socket.on('settings', (data) => {
+      this.setState({
+        fontFamily: data.fontFamily,
+        fontSize: data.fontSize,
+        colorFinished: data.colorFinished,
+        colorPaused: data.colorPaused,
+        colorRunning: data.colorRunning,
+        colorStartup: data.colorStartup
+      });
     });
   }
 
@@ -160,14 +175,6 @@ class App extends Component {
       case 66 : this.onPlayerDone(2, this.formattedSeconds(this.state.secondsElapsed)); break;
       case 86 : this.onPlayerDone(3, this.formattedSeconds(this.state.secondsElapsed)); break;
     }
-  }
-
-  settingsHandleChange() {
-    this.setState({ [event.target.name]: [event.target.value] });
-  }
-
-  settingsHandleSubmit() {
-    event.preventDefault();
   }
 
   onPlayerUpdate(index, est) {
@@ -261,6 +268,25 @@ class App extends Component {
     });
   }
 
+  updateState(key, value) {
+    this.setState({ [key]: [value] });
+  }
+
+  submitSettings() {
+    fetch('http://localhost:5555/updateSettings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fontFamily: this.state.fontFamily,
+        fontSize: this.state.fontSize,
+        colorFinished: this.state.colorFinished,
+        colorPaused: this.state.colorPaused,
+        colorStartup: this.state.colorStartup,
+        colorRunning: this.state.colorRunning
+      })
+    });
+  }
+
 }
 
 class Settings extends Component {
@@ -269,29 +295,37 @@ class Settings extends Component {
     return (
       <div>
       <h2>Settings</h2>
-        <form onSubmit={this.props.handleSubmit.bind(this)}>
+        <form onSubmit={this.handleSubmit.bind(this)}>
           <h3>Font</h3>
           <label>
             Font Family:&nbsp;
-            <input type="text" value={this.props.font} onChange={this.props.handleChange.bind(this)} name="fontFamily"/>
+            <input type="text" value={this.props.font} onChange={this.handleChange.bind(this)} name="fontFamily"/>
           </label>
           <br />
           <label>
             Font Size:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <input type="number" value={this.props.size} onChange={this.props.handleChange.bind(this)} name="fontSize" />
+            <input type="number" value={this.props.size} onChange={this.handleChange.bind(this)} name="fontSize" />
           </label>
           <h3>Colors</h3>
-          <label>Finished:&nbsp;<input type="color" name="colorFinished" value={this.props.finished} onChange={this.props.handleChange.bind(this)}/></label>
-          &nbsp;&nbsp;&nbsp;<label>Paused:&nbsp;&nbsp;<input type="color" name="colorPaused" value={this.props.paused} onChange={this.props.handleChange.bind(this)}/></label>
+          <label>Finished:&nbsp;<input type="color" name="colorFinished" value={this.props.finished} onChange={this.handleChange.bind(this)}/></label>
+          &nbsp;&nbsp;&nbsp;<label>Paused:&nbsp;&nbsp;<input type="color" name="colorPaused" value={this.props.paused} onChange={this.handleChange.bind(this)}/></label>
           <br />
-          <label>Startup:&nbsp;&nbsp;&nbsp;<input type="color" name="colorStartup" value={this.props.startup} onChange={this.props.handleChange.bind(this)}/></label>
-          &nbsp;&nbsp;&nbsp;<label>Running:&nbsp;<input type="color" name="colorRunning" value={this.props.running} onChange={this.props.handleChange.bind(this)}/></label>
+          <label>Startup:&nbsp;&nbsp;&nbsp;<input type="color" name="colorStartup" value={this.props.startup} onChange={this.handleChange.bind(this)}/></label>
+          &nbsp;&nbsp;&nbsp;<label>Running:&nbsp;<input type="color" name="colorRunning" value={this.props.running} onChange={this.handleChange.bind(this)}/></label>
           <input type="submit" value="submit" />
         </form>
       </div>
     );
   }
-/* eslint-enable no-trailing-spaces */
+
+  handleChange(event) {
+    this.props.updateState(event.target.name, event.target.value);
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+    this.props.submitSettings(event);
+  }
 }
 
 class PlayerSetup extends Component {
@@ -313,14 +347,6 @@ class PlayerSetup extends Component {
 
 
 class Stopwatch extends Component {
-  formattedSeconds(sec) {
-    return (
-      moment().startOf('day')
-              .second(sec)
-              .format('H:mm:ss')
-    );
-  }
-
   render() {
     let buttonCase;
 
@@ -332,10 +358,13 @@ class Stopwatch extends Component {
         buttonCase = <button className="timer-btn-stop" onClick={() => this.props.handleResume()}>Resume</button>;
         break;
       case 'startup':
-        buttonCase = <button className="timer-btn-start" onClick={() => this.props.handleStartClick()}>Start</button>;
+        buttonCase = <button className={this.props.players.length === 0 ? 'timer-btn-disable' : 'timer-btn-start'} onClick={this.props.players.length === 0 ? null : () => { this.props.handleStartClick(); }}>Start</button>;
         break;
       default:
         buttonCase = <button className="timer-btn-stop">ERROR</button>;
+        break;
+      case 'disableAfterDone':
+        buttonCase = <button className="timer-btn-disable">Resume</button>;
         break;
     }
 
@@ -345,13 +374,13 @@ class Stopwatch extends Component {
         <div className="timer-master">
           <h2>Master Timer</h2>
           {buttonCase}
-          <button onClick={() => this.props.handleResetClick()} className={this.props.isRunning ? 'timer-btn-reset-off' : 'timer-btn-reset'}>Reset</button>
-          <span className='time-time'>{this.formattedSeconds(this.props.secondsElapsed)}</span>
+          <button onClick={this.props.isRunning ? null : () => this.props.handleResetClick()} className={this.props.isRunning ? 'timer-btn-reset-off' : 'timer-btn-reset'}>Reset</button>
+          <span className='time-time'>{this.props.seconds}</span>
         </div>
         <div className="timer-player">
           {this.props.players.map((current) => {
             return (
-              <Players key={current.number} number={current.number} est={current.est} finished={current.finished} time={this.formattedSeconds(this.props.secondsElapsed)}
+              <Players key={current.number} number={current.number} est={current.est} finished={current.finished} time={this.props.seconds}
               onPlayerDone={this.props.onPlayerDone} playerTime={current.time} class={current.class} isReset={this.props.isReset} onPlayerResume={this.props.onPlayerResume}/>
             );
           })}
@@ -394,7 +423,7 @@ function Header() {
   return (
     <div className="header">
       <h1>ESA Germany Timer</h1>
-      <span>made by Onestay</span>
+      <span>made with &#10084; and code by Onestay</span>
     </div>
   );
 }
