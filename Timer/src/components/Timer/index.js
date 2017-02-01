@@ -14,14 +14,19 @@ class Timer extends Component {
 			milliseconds: 0,
 			fontFamily: 'Arial',
 			color: '#000000',
-			fontSize: 100
+			fontSize: 100,
+			timerFormat: 'normal'
 		};
 		this.socket = io('localhost:5555');
 	}
 
 	componentDidMount() {
 		this.socket.on('currentState', (data) => {
-			this.setState({ seconds: data.delta });
+			this.setState({
+				seconds: data.delta,
+				color: data.currentColor,
+				timerFormat: data.timerFormat
+			});
 		});
 
 		this.socket.on('timeUpdate', (data) => {
@@ -31,7 +36,8 @@ class Timer extends Component {
 		this.socket.on('settings', (data) => {
 			this.setState({
 				fontFamily: data.fontFamily,
-				fontSize: data.fontSize
+				fontSize: data.fontSize,
+				timerFormat: data.timerFormat
 			});
 		});
 
@@ -41,36 +47,65 @@ class Timer extends Component {
 	}
 
 
-	formatSeconds(sec) {
+	formattedSeconds(sec) {
 		return moment.duration(sec, 'seconds').format('H:mm:ss', { trim: false });
 	}
 
-	appendMilliseconds(sec) {
-		return moment.duration(sec, 'seconds').format('S', { trim: true })
-		.toString()
-		.substr(-3, 2);
-	}
+    formattedMilliseconds(sec) {
+        return moment.duration(sec, 'seconds').format('S', { trim: false })
+        .toString()
+        .substr(-3, 2);
+    }
+
+    formattedDynHours(sec) {
+        if (sec >= 3600) {
+        return moment.duration(sec, 'seconds').format('H:mm:ss', { trim: false });
+        } else {
+        return moment.duration(sec, 'seconds').format('mm:ss', { trim: false });
+        }
+    }
 
 	render() {
-		let style = {
+		const normalStyle = {
 			fontFamily: this.state.fontFamily,
-			fontSize: this.state.fontSize,
+			fontSize: `${this.state.fontSize}px`,
 			color: this.state.color
 		};
 
-		let millisecondsStyle = {
+        const milliStyle = {
 			fontFamily: this.state.fontFamily,
-			fontSize: this.state.fontSize / 1.5,
+			fontSize: `${this.state.fontSize / 1.5}px`,
 			color: this.state.color
-		};
+        };
 
-		let time = this.formatSeconds(this.state.seconds);
-		let milliseconds = this.appendMilliseconds(this.state.seconds);
-		let kek; //eslint-disable-line
+        let seconds = this.formattedSeconds(this.state.seconds);
+        let milliseconds = this.formattedMilliseconds(this.state.seconds);
+        let dynHours = this.formattedDynHours(this.state.seconds);
+
+        // this set's the var time according to the chosen timer format
+        let time;
+
+        if (this.state.timerFormat === 'normal') {
+            time = <span style={normalStyle}>{seconds}</span>;
+        } else if (this.state.timerFormat === 'milli') {
+            time = <div>
+                <span style={normalStyle}>{seconds}.</span>
+                <span style={milliStyle}>{milliseconds}</span>
+            </div>;
+        } else if (this.state.timerFormat === 'dynHours') {
+            time = <span style={normalStyle}>{dynHours}</span>;
+        } else if (this.state.timerFormat === 'dynHoursMilli') {
+            time = <div>
+                <span style={normalStyle}>{dynHours}.</span>
+                <span style={milliStyle}>{milliseconds}</span>
+            </div>;
+        } else {
+            time = <span style={{ color: 'red' }}>Something went horribly wrong...</span>;
+        }
+
 		return (
 			<div>
-				<span style={style}>{time}.</span>
-				<span style={millisecondsStyle}>{milliseconds}</span>
+                {time}
 			</div>
 		);
 	}

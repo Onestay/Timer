@@ -14,21 +14,24 @@ let players = [];
 
 //settings
 let fontFamily = 'Arial';
-let fontSize = 50;
+let fontSize = 100;
 let colorFinished = '#4CAF50';
 let colorPaused = '#9E9E9E';
 let colorStartup = '#000000';
 let colorRunning = '#03A9F4';
-
+let currentColor;
+let timerFormat = 'normal';
 exports.postSettings = (io) => {
 	//post settings to the main timer
 	io.emit('settings', {
 		fontFamily: fontFamily,
-		fontSize: fontSize
+		fontSize: fontSize,
+		timerFormat: timerFormat
 	});
 };
 
 function postColor(color, io) {
+	currentColor = color;
 	io.emit('colorChange', { color: color });
 };
 
@@ -39,7 +42,8 @@ exports.updateSettings = (data, io) => {
 		colorFinished: colorFinished = data.colorFinished,
 		colorStartup: colorStartup =data.colorStartup,
 		colorPaused: colorPaused = data.colorPaused,
-		colorRunning: colorRunning = data.colorRunning
+		colorRunning: colorRunning = data.colorRunning,
+		timerFormat: timerFormat = data.timerFormat
 	});
 };
 
@@ -115,7 +119,9 @@ exports.getState = () => {
 		colorFinished: colorFinished,
 		colorStartup: colorStartup,
 		colorPaused: colorPaused,
-		colorRunning: colorRunning
+		colorRunning: colorRunning,
+		currentColor: currentColor,
+		timerFormat: timerFormat
 	};
 }
 

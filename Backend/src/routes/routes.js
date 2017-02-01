@@ -53,6 +53,7 @@ module.exports = (app, io) => {
 	});
 
 	app.post('/updateSettings', (req, res) => {
+		console.log('Settings Updated')
 		timerFunctions.updateSettings(req.body, io);
 		res.status(200).send();
 	});
@@ -63,4 +64,5 @@ module.exports = (app, io) => {
 		let state = timerFunctions.getState();
 		io.emit('currentState', (state));
 	});
+
 }

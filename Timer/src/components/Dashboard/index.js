@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 
 // other libs
 import moment from 'moment';
+import 'moment-duration-format';
 import io from 'socket.io-client';
 import Alert from 'react-s-alert';
 
@@ -19,25 +20,29 @@ class App extends Component {
     this.state = {
       isSetup: false,
       players: [],
-      secondsElapsed: 0,
+      secondsElapsed: 3600,
       isRunning: false,
       isReset: 'startup',
       class: 'player-time-player-running player-time-running timer-player-wrapper',
       fontFamily: 'Arial',
-      fontSize: 100,
+      fontSize: 150,
       colorFinished: '#4CAF50',
       colorPaused: '#9E9E9E',
       colorStartup: '#000000',
-      colorRunning: '#03A9F4'
+      colorRunning: '#03A9F4',
+      timerFormat: 'normal',
+      time: '0:00:00',
+      milliTime: '0:00:00.00',
+      dynHoursTime: '00:00'
     };
     this.incrementer = null;
     this.socket = io('localhost:5555');
-    this.socket.on('timeUpdate', (data) => { this.setState({ data }); });
-    this.time = this.formattedSeconds(this.state.secondsElapsed);
   }
 
   render() {
-    this.time = this.formattedSeconds(this.state.secondsElapsed);
+    this.state.time = this.formattedSeconds(this.state.secondsElapsed);
+    this.state.milliTime = this.formattedMilliseconds(this.state.secondsElapsed);
+    this.state.dynHoursTime = this.formattedDynHours(this.state.secondsElapsed);
     return (
       <div className="wrapper" onKeyDown={this.handleKeyDown.bind(this)}>
         <Header />
@@ -47,7 +52,7 @@ class App extends Component {
           handleStopClick={this.handleStopClick.bind(this)}
           handleResetClick={this.handleResetClick.bind(this)}
           handleResume={this.handleResume.bind(this)}
-          seconds={this.time}
+          seconds={this.state.time}
           isRunning={this.state.isRunning}
           isReset={this.state.isReset}/>
         </div>
@@ -60,7 +65,12 @@ class App extends Component {
             startup={this.state.colorStartup}
             running={this.state.colorRunning}
             updateState={this.updateState.bind(this)}
-            submitSettings={this.submitSettings.bind(this)}/>
+            submitSettings={this.submitSettings.bind(this)}
+            time={this.state.time}
+            milliTime={this.state.milliTime}
+            timerFormat={this.state.timerFormat}
+            dynHoursTime={this.state.dynHoursTime}
+            />
           </div>
         </div>
         <Alert stack={{ limit: 2 }} />
@@ -105,7 +115,8 @@ class App extends Component {
         colorFinished: data.colorFinished,
         colorStartup: data.colorStartup,
         colorPaused: data.colorPaused,
-        colorRunning: data.colorRunning
+        colorRunning: data.colorRunning,
+        timerFormat: data.timerFormat
         });
       }
     });
@@ -137,7 +148,8 @@ class App extends Component {
         colorFinished: data.colorFinished,
         colorPaused: data.colorPaused,
         colorRunning: data.colorRunning,
-        colorStartup: data.colorStartup
+        colorStartup: data.colorStartup,
+        timerFormat: data.timerFormat
       });
     });
   }
@@ -164,11 +176,21 @@ class App extends Component {
   }
 
   formattedSeconds(sec) {
-    return (
-      moment().startOf('day')
-              .second(sec)
-              .format('H:mm:ss')
-    );
+    return moment.duration(sec, 'seconds').format('H:mm:ss', { trim: false });
+  }
+
+  formattedMilliseconds(sec) {
+    return moment.duration(sec, 'seconds').format('S', { trim: false })
+    .toString()
+    .substr(-3, 2);
+  }
+
+  formattedDynHours(sec) {
+    if (sec >= 3600) {
+      return moment.duration(sec, 'seconds').format('H:mm:ss', { trim: false });
+    } else {
+      return moment.duration(sec, 'seconds').format('mm:ss', { trim: false });
+    }
   }
 
   handleKeyDown(key) {
@@ -272,7 +294,13 @@ class App extends Component {
   }
 
   updateState(key, value) {
-    this.setState({ [key]: [value] });
+    let stateObject = () => {
+      let returnObj = {};
+      returnObj[key] = value;
+      return returnObj;
+    };
+
+    this.setState(stateObject);
   }
 
   submitSettings() {
@@ -285,7 +313,8 @@ class App extends Component {
         colorFinished: this.state.colorFinished,
         colorPaused: this.state.colorPaused,
         colorStartup: this.state.colorStartup,
-        colorRunning: this.state.colorRunning
+        colorRunning: this.state.colorRunning,
+        timerFormat: this.state.timerFormat
       })
     });
   }
@@ -294,7 +323,6 @@ class App extends Component {
 
 class Settings extends Component {
   render() {
-    // I'm honestly extremely sorry for any web designer looking at the styling of this form
     return (
       <div>
       <h2>Settings</h2>
@@ -329,7 +357,32 @@ class Settings extends Component {
               </div>
             </div>
           </div>
-          <input type="submit" value="submit" className="btn btn-primary"/>
+          <h3>Timer Format</h3>
+          <div className="form-check form-check-inline">
+            <label className="from-check-label">
+              <input type="radio" name="timerFormat" value="normal" onChange={this.handleChange.bind(this)} checked={this.props.timerFormat === 'normal'}/>
+              {this.props.time}
+            </label>
+          </div>
+          <div className="form-check form-check-inline">
+            <label className="from-check-label">
+              <input type="radio" name="timerFormat" value="milli" onChange={this.handleChange.bind(this)} checked={this.props.timerFormat === 'milli'}/>
+              {`${this.props.time}.${this.props.milliTime}`}
+            </label>
+          </div>
+          <div className="form-check form-check-inline">
+            <label className="from-check-label">
+              <input type="radio" name="timerFormat" value="dynHours" onChange={this.handleChange.bind(this)} checked={this.props.timerFormat === 'dynHours'}/>
+              {this.props.dynHoursTime}
+            </label>
+          </div>
+          <div className="form-check form-check-inline">
+            <label className="from-check-label">
+              <input type="radio" name="timerFormat" value="dynHoursMilli" onChange={this.handleChange.bind(this)} checked={this.props.timerFormat === 'dynHoursMilli'}/>
+              {`${this.props.dynHoursTime}.${this.props.milliTime}`}
+            </label>
+          </div>
+          <input type="submit" value="Submit" className="btn btn-primary" style={{ display: 'block' }}/>
         </form>
       </div>
     );
