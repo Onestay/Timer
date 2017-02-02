@@ -39,7 +39,7 @@ module.exports = (app, io) => {
 	app.post('/donePlayer', (req, res) => {
 		res.status(200).send();
 		console.log(`Player ${req.body.index} finished`);
-		timerFunctions.donePlayer(req.body.index, io);
+		timerFunctions.donePlayer(req.body.index,req.body.time, io);
 	});
 
 	app.post('/validateKey', (req, res) => {

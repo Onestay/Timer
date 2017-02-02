@@ -1,0 +1,12 @@
+img {
+	width: 139px;
+	height: 101px;
+	display: inline-block;
+}
+
+.player-time{
+	margin-left: 15px;
+	font-size: 5rem;
+	display: inline-block;
+	vertical-align: middle;
+}

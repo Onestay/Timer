@@ -9,7 +9,7 @@ let delta = 0;
 let isReset = 'startup';
 let isRunning = false;
 
-//player
+//players
 let players = [];
 
 //settings
@@ -152,7 +152,7 @@ exports.addPlayer = (io, data) => {
 	io.emit('addPlayer', { players: players });
 }
 
-exports.donePlayer = (playerIndex, io) => {
+exports.donePlayer = (playerIndex, time, io) => {
 	if (players.length === 0) return;
 
 	players[playerIndex].time = delta;
@@ -171,7 +171,7 @@ exports.donePlayer = (playerIndex, io) => {
 		if (players.length > 1) {
 			isReset = 'disableAfterDone';
 		} else {
-			isReset = 'stopped'
+			isReset = 'stopped';
 		}
 	io.emit('isResetUpdate', isReset);
 	postColor(colorFinished, io);
@@ -179,4 +179,10 @@ exports.donePlayer = (playerIndex, io) => {
 
 	players[playerIndex].class = 'player-time-player-stopped timer-player-wrapper';
 	io.emit('addPlayer', { players: players });
+	io.emit('showPlayerDone', {
+		show: true,
+		time: time,
+		timeToShow: 10000,
+		player: playerIndex
+	});
 };

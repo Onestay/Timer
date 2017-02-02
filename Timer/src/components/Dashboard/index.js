@@ -214,34 +214,20 @@ class App extends Component {
   }
 
   onPlayerDone(i) {
-    /*
-    if (this.state.players.length === 0) return;
-    const player = this.state.players;
-    player[i].time = time;
-    player[i].finished = true;
-
-    let playerPosition = () => { //eslint-disable-line
-      let count = 0;
-      this.state.players.forEach((value) => {
-        if (value.finished === true) {
-          count++;
-        }
-      });
-      return count;
-    };
-
-    // check if all players are finished
-    if (player.every(elem => elem.finished === true)) {
-      this.handleStopClick(true);
-      player[i].class = 'player-time-player-stopped player-time-stopped timer-player-wrapper';
+    let time;
+    switch (this.state.timerFormat) {
+      case 'normal': time = this.state.time; break;
+      case 'milli': time = `${this.state.time}.${this.state.milliTime}`; break;
+      case 'dynHours': time = this.state.dynHoursTime; break;
+      case 'dynHoursMilli': time = `${this.state.dynHoursTime}.${this.state.milliTime}`; break;
     }
-
-    player[i].class = 'player-time-player-stopped player-time-running timer-player-wrapper';
-    */
     fetch('http://localhost:5555/donePlayer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ index: i })
+      body: JSON.stringify({
+         index: i,
+         time: time
+        })
     });
   }
 
