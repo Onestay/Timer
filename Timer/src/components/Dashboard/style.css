@@ -1,12 +1,10 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:700|Roboto:400,500,700');
 
-
 body {
   margin: 0;
   padding: 0;
   font-family: 'Roboto', sans-serif;
 }
-
 
 .header {
   text-align: center;
@@ -25,9 +23,8 @@ body {
   width: 45%;
   margin: 15px;
 }
-
-
 /****** Master Timer  ******/
+
 .timer-master {
   margin: 10px;
   border-bottom: 2px solid black;
@@ -46,8 +43,8 @@ body {
 .timer-master button {
   margin: 0 0 5px 5px;
 }
-
 /****** Player Styles  ******/
+
 .player-time-player-running {
   color: cornflowerblue;
 }
@@ -67,7 +64,6 @@ body {
 .timer-player-wrapper button {
   margin-left: 10px;
 }
-
 /****** Setting Styles  ******/
 
 .settings-wrapper h2 {
@@ -79,14 +75,12 @@ body {
   text-decoration: underline;
   font-size: 1.30em;
 }
-
 /****** Panel aka Player Setup Styles  ******/
 
 .panel h2 {
   text-decoration: underline;
   font-size: 1.75em;
 }
-
 
 .button-margin {
   margin-right: 10px;
@@ -100,9 +94,7 @@ body {
   display: block;
   margin-top: 15px;
 }
-
 /****** Sidebar styles ******/
-
 
 .sidebar-wrapper {
   float: right;
@@ -110,18 +102,18 @@ body {
   max-width: 45%;
 }
 
-.sidebar-wrapper #settings, .sidebar-wrapper #player-setup {
-  margin-bottom: 30px;  
+.sidebar-wrapper #settings,
+.sidebar-wrapper #player-setup {
+  margin-bottom: 20px;
 }
-
-
 /* fix for bootstrap displaying colors badly (https://github.com/twbs/bootstrap/issues/18786) */
+
 .form-control {
-	height: 2.375rem;
+  height: 2.375rem;
 }
 
-textarea, select[multiple] {
-	height: auto;
+textarea,
+select[multiple] {
+  height: auto;
 }
-
 /* Somebody teach me how to css pls */

@@ -1,18 +1,27 @@
 // these are the functions needed to control the timer on the front-end
 let incrementer;
 let startTime;
+let startSplitTime;
 let lastStopped;
 let updateTime = 1;
 
-//these are set to something to just have a default state
+// vars to make the split thingy work
+let splitIncrementer;
+let splitRunning;
+let playerWhoSplit;
+let updateSplitTime = 300;
+let splitDelta;
+
+
+// these are set to something to just have a default state
 let delta = 0;
 let isReset = 'startup';
 let isRunning = false;
 
-//players
+// players
 let players = [];
 
-//settings
+// settings
 let fontFamily = 'Arial';
 let fontSize = 100;
 let colorFinished = '#4CAF50';
@@ -21,8 +30,52 @@ let colorStartup = '#000000';
 let colorRunning = '#03A9F4';
 let currentColor;
 let timerFormat = 'normal';
+
+exports.split = (playerIndex, io) => {
+	startSplitTime = Date.now();
+	increment(io, startSplitTime);
+	splitRunning = true;
+	playerWhoSplit = playerIndex;
+	players[playerIndex].splitDone = true;
+	splitIncrementer = setInterval(() => { increment(io, startSplitTime); }, updateSplitTime);
+	for (let i = 0; i < players.length; i++) {
+		if (i !== playerWhoSplit) {
+			// this will set shouldShowSplit to true for everybody not having pressed split
+			players[i].shouldShowSplit = true;
+		}
+	}
+	io.emit('splitRunningUpdate', { splitRunning: splitRunning });
+	io.emit('addPlayer', { players: players });
+};
+
+exports.splitStop = (playerIndex, io) => {
+	if (playerIndex === playerWhoSplit) return;
+
+	// settings the time to the current split time and split done to true
+	players[playerIndex].splitTime = splitDelta;
+	players[playerIndex].splitDone = true;
+
+	if (players.every(i => i.splitDone === true)) {
+		clearInterval(splitIncrementer);
+		setTimeout(() => {
+			players.forEach((current) => {
+				// reseting everything
+				current.shouldShowSplit = false;
+				current.splitDone = false;
+				current.splitTime = 0;
+			});
+			splitRunning = false;
+			io.emit('splitRunningUpdate', { splitRunning: splitRunning });
+			io.emit('addPlayer', { players: players });
+		}, 1000);
+	}
+
+	io.emit('splitRunningUpdate', { splitRunning: splitRunning });
+	io.emit('addPlayer', { players: players });
+};
+
 exports.postSettings = (io) => {
-	//post settings to the main timer
+	// post settings to the main timer
 	io.emit('settings', {
 		fontFamily: fontFamily,
 		fontSize: fontSize,
@@ -33,14 +86,14 @@ exports.postSettings = (io) => {
 function postColor(color, io) {
 	currentColor = color;
 	io.emit('colorChange', { color: color });
-};
+}
 
 exports.updateSettings = (data, io) => {
 	io.emit('settings', {
 		fontFamily: fontFamily = data.fontFamily,
 		fontSize: fontSize = data.fontSize,
 		colorFinished: colorFinished = data.colorFinished,
-		colorStartup: colorStartup =data.colorStartup,
+		colorStartup: colorStartup = data.colorStartup,
 		colorPaused: colorPaused = data.colorPaused,
 		colorRunning: colorRunning = data.colorRunning,
 		timerFormat: timerFormat = data.timerFormat
@@ -53,9 +106,9 @@ exports.startCount = (io) => {
 	isRunning = true;
 	isReset = 'running';
 	io.emit('isRunningUpdate', true);
-	io.emit('isResetUpdate', 'running')
+	io.emit('isResetUpdate', 'running');
 	increment(io);
-	incrementer = setInterval(() => {increment(io)}, updateTime)
+	incrementer = setInterval(() => { increment(io); }, updateTime);
 	postColor(colorRunning, io);
 };
 
@@ -64,7 +117,7 @@ exports.stopCount = (io) => {
 	clearInterval(incrementer);
 	incrementer = null;
 	isRunning = false;
-	isReset = 'stopped'
+	isReset = 'stopped';
 	io.emit('isRunningUpdate', isRunning);
 	io.emit('isResetUpdate', isReset);
 	postColor(colorPaused, io);
@@ -83,32 +136,31 @@ exports.resetCount = (io) => {
 };
 
 exports.resumeCount = (io) => {
-	if (players.every(p => p.finished === true && players.length > 1)) {
+	if (players.every(i => i.finished === true && players.length > 1)) {
 		return;
-	};
+	}
 
-	startTime += Date.now() - lastStopped; 
+	startTime += Date.now() - lastStopped;
 	isRunning = true;
 	isReset = 'running';
 	io.emit('isRunningUpdate', isRunning);
 	io.emit('isResetUpdate', isReset);
 	increment(io);
-	incrementer = setInterval(() => { increment(io) }, updateTime);
+	incrementer = setInterval(() => { increment(io); }, updateTime);
 
-	if (players.every(p => p.finished === true) && players.length === 1) {
+	if (players.every(i => i.finished === true) && players.length === 1) {
 		for (let i = 0; i < players.length; i++) {
 			players[i].finished = false;
 			players[i].time = delta;
-			players[i].class = 'player-time-player-running timer-player-wrapper'
-		};
+			players[i].class = 'player-time-player-running timer-player-wrapper';
+		}
 		io.emit('addPlayer', { players: players });
-	};
+	}
 
 	postColor(colorRunning, io);
 };
 
 exports.getState = () => {
-
 	return {
 		delta: delta,
 		isReset: isReset,
@@ -123,11 +175,16 @@ exports.getState = () => {
 		currentColor: currentColor,
 		timerFormat: timerFormat
 	};
-}
+};
 
-function increment(io) {
-	let difference = Math.round(((Date.now() - startTime) / 1000) * 100) / 100
-	if (difference !== delta) {
+function increment(io, time) {
+	let fromSplit = time !== undefined;
+	let timeToSub = time || startTime;
+	let difference = Math.round(((Date.now() - timeToSub) / 1000) * 100) / 100;
+	if (fromSplit && difference !== splitDelta) {
+		splitDelta = difference;
+		io.emit('splitTimeUpdate', { time: splitDelta });
+	} else if (!fromSplit && difference !== delta) {
 		delta = difference;
 		io.emit('timeUpdate', { secondsElapsed: delta });
 	}
@@ -143,14 +200,15 @@ exports.addPlayer = (io, data) => {
 			finished: false,
 			time: null,
 			estimate: data.est || null,
-			class: 'player-time-player-running player-time-running timer-player-wrapper'
-		}
-
+			class: 'player-time-player-running player-time-running timer-player-wrapper',
+			shouldShowSplit: false,
+			splitTime: null,
+			splitDone: false
+		};
 		players.push(playerObj);
-	};
-
+	}
 	io.emit('addPlayer', { players: players });
-}
+};
 
 exports.donePlayer = (playerIndex, time, io) => {
 	if (players.length === 0) return;
@@ -158,24 +216,24 @@ exports.donePlayer = (playerIndex, time, io) => {
 	players[playerIndex].time = delta;
 	players[playerIndex].finished = true;
 
-	if (players.every(p => p.finished === true)) {
+	if (players.every(i => i.finished === true)) {
 		lastStopped = Date.now();
 		clearInterval(incrementer);
 		incrementer = null;
 		isRunning = false;
-		isReset = 'stopped'
+		isReset = 'stopped';
 		io.emit('isRunningUpdate', isRunning);
 		io.emit('isResetUpdate', isReset);
 		players[playerIndex].class = 'player-time-player-stopped timer-player-wrapper';
-		
+
 		if (players.length > 1) {
 			isReset = 'disableAfterDone';
 		} else {
 			isReset = 'stopped';
 		}
-	io.emit('isResetUpdate', isReset);
-	postColor(colorFinished, io);
-	};
+		io.emit('isResetUpdate', isReset);
+		postColor(colorFinished, io);
+	}
 
 	players[playerIndex].class = 'player-time-player-stopped timer-player-wrapper';
 	io.emit('addPlayer', { players: players });

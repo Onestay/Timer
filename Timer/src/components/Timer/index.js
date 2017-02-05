@@ -1,4 +1,6 @@
-import React, { Component } from 'react';
+import React, {
+	Component
+} from 'react';
 
 import io from 'socket.io-client'; //eslint-disable-line
 import moment from 'moment';
@@ -51,19 +53,19 @@ class Timer extends Component {
 		return moment.duration(sec, 'seconds').format('H:mm:ss', { trim: false });
 	}
 
-    formattedMilliseconds(sec) {
-        return moment.duration(sec, 'seconds').format('S', { trim: false })
-        .toString()
-        .substr(-3, 2);
-    }
+	formattedMilliseconds(sec) {
+		return moment.duration(sec, 'seconds').format('S', { trim: false })
+			.toString()
+			.substr(-3, 2);
+	}
 
-    formattedDynHours(sec) {
-        if (sec >= 3600) {
-        return moment.duration(sec, 'seconds').format('H:mm:ss', { trim: false });
-        } else {
-        return moment.duration(sec, 'seconds').format('mm:ss', { trim: false });
-        }
-    }
+	formattedDynHours(sec) {
+		if (sec >= 3600) {
+			return moment.duration(sec, 'seconds').format('H:mm:ss', { trim: false });
+		} else {
+			return moment.duration(sec, 'seconds').format('mm:ss', { trim: false });
+		}
+	}
 
 	render() {
 		const normalStyle = {
@@ -72,36 +74,36 @@ class Timer extends Component {
 			color: this.state.color
 		};
 
-        const milliStyle = {
+		const milliStyle = {
 			fontFamily: this.state.fontFamily,
 			fontSize: `${this.state.fontSize / 1.5}px`,
 			color: this.state.color
-        };
+		};
 
-        let seconds = this.formattedSeconds(this.state.seconds);
-        let milliseconds = this.formattedMilliseconds(this.state.seconds);
-        let dynHours = this.formattedDynHours(this.state.seconds);
+		let seconds = this.formattedSeconds(this.state.seconds);
+		let milliseconds = this.formattedMilliseconds(this.state.seconds);
+		let dynHours = this.formattedDynHours(this.state.seconds);
 
-        // this set's the var time according to the chosen timer format
-        let time;
+		// this set's the var time according to the chosen timer format
+		let time;
 
-        if (this.state.timerFormat === 'normal') {
-            time = <span style={normalStyle}>{seconds}</span>;
-        } else if (this.state.timerFormat === 'milli') {
-            time = <div>
+		if (this.state.timerFormat === 'normal') {
+			time = <span style={normalStyle}>{seconds}</span>;
+		} else if (this.state.timerFormat === 'milli') {
+			time = <div>
                 <span style={normalStyle}>{seconds}.</span>
                 <span style={milliStyle}>{milliseconds}</span>
             </div>;
-        } else if (this.state.timerFormat === 'dynHours') {
-            time = <span style={normalStyle}>{dynHours}</span>;
-        } else if (this.state.timerFormat === 'dynHoursMilli') {
-            time = <div>
+		} else if (this.state.timerFormat === 'dynHours') {
+			time = <span style={normalStyle}>{dynHours}</span>;
+		} else if (this.state.timerFormat === 'dynHoursMilli') {
+			time = <div>
                 <span style={normalStyle}>{dynHours}.</span>
                 <span style={milliStyle}>{milliseconds}</span>
             </div>;
-        } else {
-            time = <span style={{ color: 'red' }}>Something went horribly wrong...</span>;
-        }
+		} else {
+			time = <span style={{ color: 'red' }}>Something went horribly wrong...</span>;
+		}
 
 		return (
 			<div>

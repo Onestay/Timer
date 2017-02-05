@@ -1,5 +1,4 @@
 module.exports = (app, io) => {
-
 	const timerFunctions = require('../functions/timer.js');
 	const auth = require('../functions/auth.js');
 
@@ -39,7 +38,7 @@ module.exports = (app, io) => {
 	app.post('/donePlayer', (req, res) => {
 		res.status(200).send();
 		console.log(`Player ${req.body.index} finished`);
-		timerFunctions.donePlayer(req.body.index,req.body.time, io);
+		timerFunctions.donePlayer(req.body.index, req.body.time, io);
 	});
 
 	app.post('/validateKey', (req, res) => {
@@ -53,8 +52,20 @@ module.exports = (app, io) => {
 	});
 
 	app.post('/updateSettings', (req, res) => {
-		console.log('Settings Updated')
+		console.log('Settings Updated');
 		timerFunctions.updateSettings(req.body, io);
+		res.status(200).send();
+	});
+
+	app.post('/split', (req, res) => {
+		console.log('Split');
+		timerFunctions.split(req.body.player, io);
+		res.status(200).send();
+	});
+
+	app.post('/splitStop', (req, res) => {
+		console.log('Split stop');
+		timerFunctions.splitStop(req.body.player, io);
 		res.status(200).send();
 	});
 
@@ -62,7 +73,6 @@ module.exports = (app, io) => {
 	io.on('connection', () => {
 		console.log('Client connected.');
 		let state = timerFunctions.getState();
-		io.emit('currentState', (state));
+		io.emit('currentState', state);
 	});
-
-}
+};

@@ -1,4 +1,6 @@
-import { render } from 'react-dom';
+import {
+	render
+} from 'react-dom';
 
 import routes from './router';
 

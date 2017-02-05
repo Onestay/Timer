@@ -1,4 +1,6 @@
-import React, { Component } from 'react';
+import React, {
+	Component
+} from 'react';
 
 // other libs
 import io from 'socket.io-client'; //eslint-disable-line
