@@ -3,7 +3,7 @@ let incrementer;
 let startTime;
 let startSplitTime;
 let lastStopped;
-let updateTime = 1;
+let updateTime = 300;
 
 // vars to make the split thingy work
 let splitIncrementer;
@@ -89,6 +89,15 @@ function postColor(color, io) {
 }
 
 exports.updateSettings = (data, io) => {
+	if (data.timerFormat === 'milli' || data.timerFormat === 'dynHoursMilli') {
+		updateTime = 1;
+		clearInterval(incrementer);
+		incrementer = setInterval(() => { increment(io); }, updateTime);
+	} else {
+		updateTime = 300;
+		clearInterval(incrementer);
+		incrementer = setInterval(() => { increment(io); }, updateTime);
+	}
 	io.emit('settings', {
 		fontFamily: fontFamily = data.fontFamily,
 		fontSize: fontSize = data.fontSize,
