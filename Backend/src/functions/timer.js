@@ -25,9 +25,9 @@ let players = [];
 let fontFamily = 'Arial';
 let fontSize = 100;
 let colorFinished = '#4CAF50';
-let colorPaused = '#9E9E9E';
-let colorStartup = '#000000';
-let colorRunning = '#03A9F4';
+let colorPaused = '#ffffff';
+let colorStartup = '#ffffff';
+let colorRunning = '#ffffff';
 let currentColor;
 let timerFormat = 'normal';
 
@@ -89,15 +89,16 @@ function postColor(color, io) {
 }
 
 exports.updateSettings = (data, io) => {
-	if (data.timerFormat === 'milli' || data.timerFormat === 'dynHoursMilli') {
+	if (data.timerFormat === 'milli' && this.timerFormat !== 'milli') {
 		updateTime = 1;
-		clearInterval(incrementer);
-		incrementer = setInterval(() => { increment(io); }, updateTime);
-	} else {
+	} else if (data.timerFormat === 'dynHoursMilli' && this.timerFormat !== 'dynHoursMilli') {
+		updateTime = 1;
+	} else if (data.timerFormat === 'normal' && this.timerFormat !== 'normal') {
 		updateTime = 300;
-		clearInterval(incrementer);
-		incrementer = setInterval(() => { increment(io); }, updateTime);
+	} else if (data.timerFormat === 'dynHours' && this.timerFormat !== 'dynHours') {
+		updateTime = 300;
 	}
+
 	io.emit('settings', {
 		fontFamily: fontFamily = data.fontFamily,
 		fontSize: fontSize = data.fontSize,
@@ -111,6 +112,9 @@ exports.updateSettings = (data, io) => {
 
 
 exports.startCount = (io) => {
+	if (players.length === 0) {
+		return;
+	}
 	startTime = Date.now();
 	isRunning = true;
 	isReset = 'running';

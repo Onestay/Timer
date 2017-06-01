@@ -20,7 +20,7 @@ class Player extends Component {
 			show: false,
 			time: '0:00:00'
 		};
-		this.socket = io('localhost:5555');
+		this.socket = io('');
 	}
 
 	componentDidMount() {

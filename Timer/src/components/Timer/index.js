@@ -19,7 +19,7 @@ class Timer extends Component {
 			fontSize: 100,
 			timerFormat: 'normal'
 		};
-		this.socket = io('localhost:5555');
+		this.socket = io();
 	}
 
 	componentDidMount() {
@@ -71,13 +71,17 @@ class Timer extends Component {
 		const normalStyle = {
 			fontFamily: this.state.fontFamily,
 			fontSize: `${this.state.fontSize}px`,
-			color: this.state.color
+			color: this.state.color,
+			'-webkit-text-stroke': '3px black',
+			'font-weight': 'bold'
 		};
 
 		const milliStyle = {
 			fontFamily: this.state.fontFamily,
 			fontSize: `${this.state.fontSize / 1.5}px`,
-			color: this.state.color
+			color: this.state.color,
+			'-webkit-text-stroke': '1.5px black',
+			'font-weight': 'bold'
 		};
 
 		let seconds = this.formattedSeconds(this.state.seconds);

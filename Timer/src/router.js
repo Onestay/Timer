@@ -12,7 +12,7 @@ import Players from './components/Players';
 import Timer from './components/Timer';
 
 const correctKey = (nextState, replace, callback) => {
-	fetch('http://localhost:5555/validateKey', {
+	fetch('/validateKey', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ url: window.location.href })

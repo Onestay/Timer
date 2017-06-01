@@ -4,10 +4,12 @@ const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const server = require('http').createServer(app);
+const helmet = require('helmet');
 const io = require('socket.io')(server);
+const path = require('path');
 
-io.set('origins', '*:*');
-
+app.use(helmet());
+app.use('/static', express.static(path.join(__dirname, 'public', 'static')));
 app.use(cors());
 app.use(bodyParser.json());
 

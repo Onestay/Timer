@@ -1,6 +1,9 @@
 module.exports = (app, io) => {
+	const keypress = require('keypress');
 	const timerFunctions = require('../functions/timer.js');
 	const auth = require('../functions/auth.js');
+	const path = require('path');
+	keypress(process.stdin);
 
 	app.get('/startTimer', (req, res) => {
 		res.status(200).send();
@@ -69,10 +72,29 @@ module.exports = (app, io) => {
 		res.status(200).send();
 	});
 
+	app.get('*', (req, res) => {
+		res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+	});
+
 	// this doesn't really belong here. Will probably move this into a different file later
 	io.on('connection', () => {
 		console.log('Client connected.');
 		let state = timerFunctions.getState();
 		io.emit('currentState', state);
+	});
+
+	process.stdin.on('keypress', (ch, key) => {
+		const timerKey = 'g';
+		let state = timerFunctions.getState();
+		if (key.name === timerKey) {
+			if (state.isRunning === false) {
+				return timerFunctions.startCount(io);
+			}
+			timerFunctions.donePlayer(0, 0, io);
+		}
+
+		if (key && key.ctrl && key.name === 'c') {
+			process.stdin.pause();
+		}
 	});
 };

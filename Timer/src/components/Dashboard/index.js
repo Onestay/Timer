@@ -40,7 +40,7 @@ class App extends Component {
 			splitRunning: false
 		};
 		this.incrementer = null;
-		this.socket = io('localhost:5555');
+		this.socket = io();
 	}
 
 	render() {
@@ -81,6 +81,7 @@ class App extends Component {
             milliTime={this.state.milliTime}
             timerFormat={this.state.timerFormat}
             dynHoursTime={this.state.dynHoursTime}
+			isReset={this.state.isReset}
             />
           </div>
         </div>
@@ -90,10 +91,6 @@ class App extends Component {
 	}
 
 	componentDidMount() {
-		document.body.addEventListener('keydown', (event) => {
-			this.handleKeyDown(event.keyCode);
-		});
-
 		this.socket.on('timeUpdate', (data) => {
 			this.setState({ secondsElapsed: data.secondsElapsed });
 		});
@@ -231,7 +228,7 @@ class App extends Component {
 	}
 
 	onPlayerUpdate(index, est) {
-		fetch('http://localhost:5555/addPlayer', {
+		fetch('/addPlayer', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -257,7 +254,7 @@ class App extends Component {
 				time = `${this.state.dynHoursTime}.${this.state.milliTime}`;
 				break;
 		}
-		fetch('http://localhost:5555/donePlayer', {
+		fetch('/donePlayer', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -268,7 +265,7 @@ class App extends Component {
 	}
 
 	handleSplitClick(i) {
-		fetch('http://localhost:5555/split', {
+		fetch('/split', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ player: i })
@@ -276,7 +273,7 @@ class App extends Component {
 	}
 
 	handleSplitStopClick(i) {
-		fetch('http://localhost:5555/splitStop', {
+		fetch('/splitStop', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ player: i })
@@ -284,7 +281,7 @@ class App extends Component {
 	}
 
 	handleStartClick() {
-		fetch('http://localhost:5555/startTimer').catch((e) => {
+		fetch('/startTimer').catch((e) => {
 				this.alertMessage(`Couldn't connect to backend server. Error: ${e.message}`);
 			})
 			.then((data) => {
@@ -296,7 +293,7 @@ class App extends Component {
 	}
 
 	handleStopClick() {
-		fetch('http://localhost:5555/stopTimer').catch((e) => {
+		fetch('/stopTimer').catch((e) => {
 				this.alertMessage(`Couldn't connect to backend server. Error: ${e.message}`);
 			})
 			.then((data) => {
@@ -308,7 +305,7 @@ class App extends Component {
 	}
 
 	handleResetClick() {
-		fetch('http://localhost:5555/resetTimer').catch((e) => {
+		fetch('/resetTimer').catch((e) => {
 				this.alertMessage(`Couldn't connect to backend server. Error: ${e.message}`);
 			})
 			.then((data) => {
@@ -320,7 +317,7 @@ class App extends Component {
 	}
 
 	handleResume() {
-		fetch('http://localhost:5555/resumeTimer').catch((e) => {
+		fetch('/resumeTimer').catch((e) => {
 				this.alertMessage(`Couldn't connect to backend server. Error: ${e.message}`);
 			})
 			.then((data) => {
@@ -342,7 +339,7 @@ class App extends Component {
 	}
 
 	submitSettings() {
-		fetch('http://localhost:5555/updateSettings', {
+		fetch('/updateSettings', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -365,6 +362,7 @@ class Settings extends Component {
 			<div>
       <h2>Settings</h2>
         <form onSubmit={this.handleSubmit.bind(this)}>
+		<fieldset disabled={this.props.isReset === 'startup' ? '' : 'disabled'}>
           <h3>Font</h3>
           <div className="form-group">
             <label>
@@ -421,6 +419,7 @@ class Settings extends Component {
             </label>
           </div>
           <input type="submit" value="Submit" className="btn btn-primary" style={{ display: 'block' }}/>
+          </fieldset>
         </form>
       </div>
 		);
@@ -567,7 +566,7 @@ class Players extends Component {
 function Header() {
 	return (
 		<div className="header">
-      <h1>ESA Germany Timer</h1>
+      <h1>Dokomi Timer</h1>
       <small className="text-muted">made with &#10084; and code by Onestay</small>
     </div>
 	);
